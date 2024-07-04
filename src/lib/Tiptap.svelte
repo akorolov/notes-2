@@ -1,5 +1,6 @@
 <script lang="ts">
     import { onMount, onDestroy } from 'svelte'
+    import { createEventDispatcher } from 'svelte';
     import { Editor } from '@tiptap/core'
     import StarterKit from '@tiptap/starter-kit'
     import { InputChip } from '@skeletonlabs/skeleton';
@@ -22,11 +23,19 @@
     export let content: string
     export let tags: string[]
     export let plain_text: string
-    export let title: string
-    export let updated: Date
-    export let created: Date
+    export let id: number = 0
+    export let activeEditor = 0
+    // export let title: string
+    // export let updated: Date
+    // export let created: Date
 
+    let showControls = false;
 
+    $: if (activeEditor != id) showControls = false;
+
+    const dispatch = createEventDispatcher();
+
+    $: if (editor && editor.isFocused) showControls = true && dispatch('showControls', true);
 
     let paragraph_style = "P"
 
@@ -158,112 +167,128 @@
 
   </script>
 
-  <div class="w-full card p-4 bg-surface-50 flex flex-col gap-2">
-    <input class="input bg-surface-50 h3" type="text" bind:value={title} placeholder="Title" />
-    <div class="text-xs italic mb-1 ml-1">Created {created.toLocaleString([], {hour: '2-digit', minute:'2-digit', day: '2-digit', month: 'numeric', year: '2-digit'})} <span class="divider-vertical h-1" /> Updated {updated.toLocaleString([], {hour: '2-digit', minute:'2-digit', month: 'numeric', year: '2-digit', day: '2-digit'})}</div>
+    <!-- <input class="input bg-surface-50 h3" type="text" bind:value={title} placeholder="Title" />
+    <div class="text-xs italic mb-1 ml-1">Created {created.toLocaleString([], {hour: '2-digit', minute:'2-digit', day: '2-digit', month: 'numeric', year: '2-digit'})} <span class="divider-vertical h-1" /> Updated {updated.toLocaleString([], {hour: '2-digit', minute:'2-digit', month: 'numeric', year: '2-digit', day: '2-digit'})}</div> -->
 
-    <div id="editor-buttons" class="flex flex-row flex-wrap gap-1">
-  
-        {#if editor}
 
-            <select class="select variant-form-material w-32" bind:value={paragraph_style} on:change={() => setParagraphStyle(paragraph_style)}>
-                {#each paragraph_styles as ps}
-                <option value={ps}>{styles_readable[ps]}</option>
-                {/each}
-            </select>
+    <div id="editor-whole" class="border border-surface-300" style="border-radius: 4px;">
+        {#if showControls && editor}
+        <InputChip bind:value={tags} chips="variant-filled-primary" name="tags" placeholder="Add a tag..." />
+        <div id="editor-buttons" class="m-2 flex flex-row flex-wrap gap-1">
+    
+                <!-- <select class="select variant-form-material w-32" style="height: 30px; padding-left: 10px; padding-top: 5px;" bind:value={paragraph_style} on:change={() => setParagraphStyle(paragraph_style)}>
+                    {#each paragraph_styles as ps}
+                    <option value={ps}>{styles_readable[ps]}</option>
+                    {/each}
+                </select> -->
 
-            <!-- {#each paragraph_styles as c}
-                <button
-                    class="chip {paragraph_style == c ? 'variant-filled' : 'variant-soft'}" style="margin: 1px; border-radius: 1px;"
-                    on:click={() => { setParagraphStyle(c) }}
-                    on:keypress
-                >
-                    <span>{c}</span>
+                
+                <button class="chip p-1 {editor.isActive("heading", { level: 1 }) ? 'variant-filled' : 'variant-soft'}" style="height: 30px; margin: 0px; border-radius: 1px;"
+                    on:click={() => setParagraphStyle("H1")}> <span class="material-symbols-outlined text-xl">
+                        format_h1
+                        </span>
                 </button>
-            {/each} -->
+                <button class="chip p-1 {editor.isActive("heading", { level: 2 }) ? 'variant-filled' : 'variant-soft'}" style="height: 30px; margin: 0px; border-radius: 1px;"
+                    on:click={() => setParagraphStyle("H2")}> <span class="material-symbols-outlined text-xl">
+                        format_h2
+                        </span>
+                </button>
+                <button class="chip p-1 {editor.isActive("heading", { level: 3 }) ? 'variant-filled' : 'variant-soft'}" style="height: 30px; margin: 0px; border-radius: 1px;"
+                    on:click={() => setParagraphStyle("H3")}> <span class="material-symbols-outlined text-xl">
+                        format_h3
+                        </span>
+                </button>
+                <button class="chip p-1 {editor.isActive("paragraph") ? 'variant-filled' : 'variant-soft'}" style="height: 30px; margin: 0px; border-radius: 1px;"
+                    on:click={() => setParagraphStyle("P")} > <span class="material-symbols-outlined text-xl">
+                        format_paragraph
+                        </span>
+                </button>
 
-            <button class="chip p-1 {editor.isActive("bold") ? 'variant-filled' : 'variant-soft'}" style="margin: 0px; border-radius: 1px;"
-                on:click={() => editor.chain().focus().toggleBold().run()} > <span class="material-symbols-outlined text-2xl">
-                    format_bold
-                    </span>
-            </button>
-            <button class="chip p-1 {editor.isActive("italic") ? 'variant-filled' : 'variant-soft'}" style="margin: 0px; border-radius: 1px;"
-                on:click={() => editor.chain().focus().toggleItalic().run()} > <span class="material-symbols-outlined text-2xl">
-                    format_italic
-                    </span>
-            </button>
-            <button class="chip p-1 {editor.isActive("underline") ? 'variant-filled' : 'variant-soft'}" style="margin: 0px; border-radius: 1px;"
-                on:click={() => editor.chain().focus().toggleUnderline().run()} > <span class="material-symbols-outlined text-2xl">
-                    format_underlined
-                    </span>
-            </button>
-            <!-- <button class="chip p-1 {editor.isActive("subscript") ? 'variant-filled' : 'variant-soft'}" style="margin: 0px; border-radius: 1px;"
-                on:click={() => editor.chain().focus().toggleSubscript().run()} > <span class="material-symbols-outlined text-2xl">
-                    subscript
-                    </span>
-            </button>
-            <button class="chip p-1 {editor.isActive("superscript") ? 'variant-filled' : 'variant-soft'}" style="margin: 0px; border-radius: 1px;"
-                on:click={() => editor.chain().focus().toggleSuperscript().run()} > <span class="material-symbols-outlined text-2xl">
-                    superscript
-                    </span>
-            </button> -->
-            <button class="chip p-1 {editor.isActive("highlight") ? 'variant-filled' : 'variant-soft'}" style="margin: 0px; border-radius: 1px;"
-                on:click={() => editor.chain().focus().toggleHighlight().run()} > <span class="material-symbols-outlined text-2xl">
-                    format_ink_highlighter
-                    </span>
-            </button>
-            <!-- <button class="chip p-1 {editor.isActive("highlight") ? 'variant-filled' : 'variant-soft'}" style="margin: 0px; border-radius: 1px;"
-                on:click={() => editor.chain().focus().toggleHighlight().run()} > <span class="material-symbols-outlined text-2xl">
-                    format_color_text
-                    </span>
-            </button> -->
-            <button class="chip p-1 {editor.isActive("blockquote") ? 'variant-filled' : 'variant-soft'}" style="margin: 0px; border-radius: 1px;"
-                on:click={() => {clearStyles(); editor.chain().focus().toggleBlockquote().run()}} > <span class="material-symbols-outlined text-2xl">
-                    format_quote
-                </span>
-            </button>
-            <span class="divider-vertical h-10 m-1" />
-            <button class="chip p-1 {editor.isActive({ textAlign: 'left' }) ? 'variant-filled' : 'variant-soft'}" style="margin: 0px; border-radius: 1px;"
-                on:click={() => editor.chain().focus().setTextAlign('left').run()} > <span class="material-symbols-outlined text-2xl">
-                    format_align_left
-                    </span>
-            </button>
-            <button class="chip p-1 {editor.isActive({ textAlign: 'center' }) ? 'variant-filled' : 'variant-soft'}" style="margin: 0px; border-radius: 1px;"
-                on:click={() => editor.chain().focus().setTextAlign('center').run()} > <span class="material-symbols-outlined text-2xl">
-                    format_align_center
-                    </span>
-            </button>
-            <button class="chip p-1 {editor.isActive({ textAlign: 'right' }) ? 'variant-filled' : 'variant-soft'}" style="margin: 0px; border-radius: 1px;"
-                on:click={() => editor.chain().focus().setTextAlign('right').run()} > <span class="material-symbols-outlined text-2xl">
-                    format_align_right
-                    </span>
-            </button>
+                <span class="divider-vertical m-1" style="height: 20px;" />
 
-            <span class="divider-vertical h-10 m-1" />
-            <button class="chip p-1 {editor.isActive("bulletList") ? 'variant-filled' : 'variant-soft'}" style="margin: 0px; border-radius: 1px;"
-                on:click={() => {clearStyles(); editor.chain().focus().toggleBulletList().run()}} > <span class="material-symbols-outlined text-2xl">
-                    format_list_bulleted
+                <button class="chip p-1 {editor.isActive("bold") ? 'variant-filled' : 'variant-soft'}" style="height: 30px; margin: 0px; border-radius: 1px;"
+                    on:click={() => editor.chain().focus().toggleBold().run()} > <span class="material-symbols-outlined text-xl">
+                        format_bold
+                        </span>
+                </button>
+                <button class="chip p-1 {editor.isActive("italic") ? 'variant-filled' : 'variant-soft'}" style="height: 30px; margin: 0px; border-radius: 1px;"
+                    on:click={() => editor.chain().focus().toggleItalic().run()} > <span class="material-symbols-outlined text-xl">
+                        format_italic
+                        </span>
+                </button>
+                <button class="chip p-1 {editor.isActive("underline") ? 'variant-filled' : 'variant-soft'}" style="height: 30px; margin: 0px; border-radius: 1px;"
+                    on:click={() => editor.chain().focus().toggleUnderline().run()} > <span class="material-symbols-outlined text-xl">
+                        format_underlined
+                        </span>
+                </button>
+                <!-- <button class="chip p-1 {editor.isActive("subscript") ? 'variant-filled' : 'variant-soft'}" style="height: 30px; margin: 0px; border-radius: 1px;"
+                    on:click={() => editor.chain().focus().toggleSubscript().run()} > <span class="material-symbols-outlined text-xl">
+                        subscript
+                        </span>
+                </button>
+                <button class="chip p-1 {editor.isActive("superscript") ? 'variant-filled' : 'variant-soft'}" style="height: 30px; margin: 0px; border-radius: 1px;"
+                    on:click={() => editor.chain().focus().toggleSuperscript().run()} > <span class="material-symbols-outlined text-xl">
+                        superscript
+                        </span>
+                </button> -->
+                <button class="chip p-1 {editor.isActive("highlight") ? 'variant-filled' : 'variant-soft'}" style="height: 30px; margin: 0px; border-radius: 1px;"
+                    on:click={() => editor.chain().focus().toggleHighlight().run()} > <span class="material-symbols-outlined text-xl">
+                        format_ink_highlighter
+                        </span>
+                </button>
+                <!-- <button class="chip p-1 {editor.isActive("highlight") ? 'variant-filled' : 'variant-soft'}" style="height: 30px; margin: 0px; border-radius: 1px;"
+                    on:click={() => editor.chain().focus().toggleHighlight().run()} > <span class="material-symbols-outlined text-xl">
+                        format_color_text
+                        </span>
+                </button> -->
+                <button class="chip p-1 {editor.isActive("blockquote") ? 'variant-filled' : 'variant-soft'}" style="height: 30px; margin: 0px; border-radius: 1px;"
+                    on:click={() => {clearStyles(); editor.chain().focus().toggleBlockquote().run()}} > <span class="material-symbols-outlined text-xl">
+                        format_quote
                     </span>
-            </button>
-            <button class="chip p-1 {editor.isActive("orderedList") ? 'variant-filled' : 'variant-soft'}" style="margin: 0px; border-radius: 1px;"
-                on:click={() => {clearStyles(); editor.chain().focus().toggleOrderedList().run()}} > <span class="material-symbols-outlined text-2xl">
-                    format_list_numbered
-                    </span>
-            </button>
-            <button class="chip p-1 {editor.isActive("taskList") ? 'variant-filled' : 'variant-soft'}" style="margin: 0px; border-radius: 1px;"
-                on:click={() => {clearStyles(); editor.chain().focus().toggleTaskList().run()}} > <span class="material-symbols-outlined text-2xl">
-                    checklist
-                    </span>
-            </button>
+                </button>
 
 
+                <!-- <span class="divider-vertical m-1" style="height: 20px;" />
+                <button class="chip p-1 {editor.isActive({ textAlign: 'left' }) ? 'variant-filled' : 'variant-soft'}" style="height: 30px; margin: 0px; border-radius: 1px;"
+                    on:click={() => editor.chain().focus().setTextAlign('left').run()} > <span class="material-symbols-outlined text-xl">
+                        format_align_left
+                        </span>
+                </button>
+                <button class="chip p-1 {editor.isActive({ textAlign: 'center' }) ? 'variant-filled' : 'variant-soft'}" style="height: 30px; margin: 0px; border-radius: 1px;"
+                    on:click={() => editor.chain().focus().setTextAlign('center').run()} > <span class="material-symbols-outlined text-xl">
+                        format_align_center
+                        </span>
+                </button>
+                <button class="chip p-1 {editor.isActive({ textAlign: 'right' }) ? 'variant-filled' : 'variant-soft'}" style="height: 30px; margin: 0px; border-radius: 1px;"
+                    on:click={() => editor.chain().focus().setTextAlign('right').run()} > <span class="material-symbols-outlined text-xl">
+                        format_align_right
+                        </span>
+                </button> -->
+
+                <span class="divider-vertical m-1" style="height: 20px;" />
+                <button class="chip p-1 {editor.isActive("bulletList") ? 'variant-filled' : 'variant-soft'}" style="height: 30px; margin: 0px; border-radius: 1px;"
+                    on:click={() => {if (!editor.isActive("bulletList")) clearStyles(); editor.chain().focus().toggleBulletList().run()}} > <span class="material-symbols-outlined text-xl">
+                        format_list_bulleted
+                        </span>
+                </button>
+                <button class="chip p-1 {editor.isActive("orderedList") ? 'variant-filled' : 'variant-soft'}" style="height: 30px; margin: 0px; border-radius: 1px;"
+                    on:click={() => {if (!editor.isActive("orderedList")) clearStyles(); editor.chain().focus().toggleOrderedList().run()}} > <span class="material-symbols-outlined text-xl">
+                        format_list_numbered
+                        </span>
+                </button>
+                <button class="chip p-1 {editor.isActive("taskList") ? 'variant-filled' : 'variant-soft'}" style="height: 30px; margin: 0px; border-radius: 1px;"
+                    on:click={() => {if (!editor.isActive("taskList")) clearStyles(); editor.chain().focus().toggleTaskList().run()}} > <span class="material-symbols-outlined text-xl">
+                        checklist
+                        </span>
+                </button>
+
+        </div>
         {/if}
-
-    </div>
-  
-  <div id="editor-body" class="textarea bg-surface-50 p-2 overflow-auto" style="max-height: 70vh;" bind:this={element} />
-
-  <InputChip bind:value={tags} chips="variant-filled-primary" name="tags" placeholder="Add a tag..." />
-
+    
+    <div id="editor-body" class="m-1 bg-surface-50 overflow-auto" style="max-height: 70vh;" bind:this={element} />
 </div>
+
+
+  <!-- <InputChip bind:value={tags} chips="variant-filled-primary" name="tags" placeholder="Add a tag..." /> -->
+
   
