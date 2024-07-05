@@ -173,7 +173,8 @@
 
     <div id="editor-whole" class="border border-surface-300" style="border-radius: 4px;">
         {#if showControls && editor}
-        <InputChip bind:value={tags} chips="variant-filled-primary" name="tags" placeholder="Add a tag..." />
+        
+
         <div id="editor-buttons" class="m-2 flex flex-row flex-wrap gap-1">
     
                 <!-- <select class="select variant-form-material w-32" style="height: 30px; padding-left: 10px; padding-top: 5px;" bind:value={paragraph_style} on:change={() => setParagraphStyle(paragraph_style)}>
@@ -283,6 +284,11 @@
                 </button>
 
         </div>
+
+        <div id="addTags" class="px-2">
+            <InputChip bind:value={tags} name="chips" regionChipList="!gap-1 !my-1" regionChipWrapper="-m-1" regionInput="p-1" placeholder="Add a tag..." />
+        </div>
+
         {/if}
     
     <div id="editor-body" class="m-1 bg-surface-50 overflow-auto" style="max-height: 70vh;" bind:this={element} />
